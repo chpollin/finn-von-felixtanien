@@ -1,7 +1,9 @@
 export class Input {
     constructor(canvas) {
         this.keys = new Set();
-        this.mouse = { x: 0, y: 0, down: false };
+        this.prevKeys = new Set();
+        this.mouse = { x: 0, y: 0, down: false, justDown: false };
+        this._mouseWasDown = false;
 
         window.addEventListener('keydown', (e) => {
             this.keys.add(e.code);
@@ -30,5 +32,17 @@ export class Input {
 
     isKeyDown(code) {
         return this.keys.has(code);
+    }
+
+    /** Gibt true nur im ersten Frame zurück, in dem die Taste gedrückt wird */
+    justPressed(code) {
+        return this.keys.has(code) && !this.prevKeys.has(code);
+    }
+
+    /** Am Ende jedes Frames aufrufen */
+    endFrame() {
+        this.prevKeys = new Set(this.keys);
+        this.mouse.justDown = this.mouse.down && !this._mouseWasDown;
+        this._mouseWasDown = this.mouse.down;
     }
 }
