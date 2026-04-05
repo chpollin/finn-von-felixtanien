@@ -146,31 +146,201 @@ export class Game {
         requestAnimationFrame((t) => this.loop(t));
     }
 
-    renderBackground(ctx) {
+    renderBackground(ctx, theme = 'forest') {
         const { width, height, camera } = this;
-        const parallax = 0.15;
-        const offset = camera.x * parallax;
 
+        if (theme === 'forest') {
+            this.renderForestBg(ctx, width, height, camera);
+        } else if (theme === 'sky') {
+            this.renderSkyBg(ctx, width, height, camera);
+        } else if (theme === 'lava') {
+            this.renderLavaBg(ctx, width, height, camera);
+        } else {
+            this.renderDefaultBg(ctx, width, height, camera);
+        }
+    }
+
+    renderDefaultBg(ctx, w, h, cam) {
+        const offset = cam.x * 0.15;
         ctx.fillStyle = '#2a4a3a';
         for (let i = 0; i < 6; i++) {
             const hx = i * 200 - (offset % 200) - 100;
             const hh = 60 + Math.sin(i * 1.7) * 30;
             ctx.beginPath();
-            ctx.moveTo(hx, height);
-            ctx.quadraticCurveTo(hx + 100, height - hh, hx + 200, height);
+            ctx.moveTo(hx, h);
+            ctx.quadraticCurveTo(hx + 100, h - hh, hx + 200, h);
+            ctx.fill();
+        }
+    }
+
+    renderForestBg(ctx, w, h, cam) {
+        // Layer 1: Wolken (sehr langsam)
+        const cloudOff = cam.x * 0.03;
+        ctx.fillStyle = '#3a4a6a';
+        ctx.globalAlpha = 0.3;
+        for (let i = 0; i < 5; i++) {
+            const cx = i * 220 - (cloudOff % 220) - 50;
+            const cy = 60 + Math.sin(i * 2.1) * 30;
+            ctx.beginPath();
+            ctx.arc(cx, cy, 30, 0, Math.PI * 2);
+            ctx.arc(cx + 25, cy - 8, 24, 0, Math.PI * 2);
+            ctx.arc(cx + 50, cy, 28, 0, Math.PI * 2);
+            ctx.arc(cx + 20, cy + 5, 20, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+
+        // Layer 2: Ferne Berge/Hügel
+        const off1 = cam.x * 0.08;
+        ctx.fillStyle = '#1a3a2a';
+        for (let i = 0; i < 6; i++) {
+            const hx = i * 200 - (off1 % 200) - 100;
+            const hh = 80 + Math.sin(i * 1.7) * 40;
+            ctx.beginPath();
+            ctx.moveTo(hx, h);
+            ctx.quadraticCurveTo(hx + 100, h - hh, hx + 200, h);
             ctx.fill();
         }
 
-        ctx.fillStyle = '#1a3a2a';
-        const offset2 = camera.x * 0.3;
-        for (let i = 0; i < 5; i++) {
-            const hx = i * 250 - (offset2 % 250) - 125;
-            const hh = 40 + Math.sin(i * 2.3 + 1) * 20;
+        // Layer 3: Ferne Bäume (Silhouetten, dunkel)
+        const off2 = cam.x * 0.15;
+        ctx.fillStyle = '#1a3828';
+        for (let i = 0; i < 10; i++) {
+            const tx = i * 120 - (off2 % 120) - 40;
+            const th = 50 + Math.sin(i * 3.7) * 20;
+            // Stamm
+            ctx.fillRect(tx + 8, h - th + 20, 6, th - 20);
+            // Krone (Dreieck)
             ctx.beginPath();
-            ctx.moveTo(hx, height);
-            ctx.quadraticCurveTo(hx + 125, height - hh, hx + 250, height);
+            ctx.moveTo(tx - 4, h - th + 24);
+            ctx.lineTo(tx + 11, h - th - 10);
+            ctx.lineTo(tx + 26, h - th + 24);
+            ctx.closePath();
             ctx.fill();
         }
+
+        // Layer 4: Nähere Hügel mit Gras
+        const off3 = cam.x * 0.25;
+        ctx.fillStyle = '#2a4a2a';
+        for (let i = 0; i < 5; i++) {
+            const hx = i * 250 - (off3 % 250) - 125;
+            const hh = 45 + Math.sin(i * 2.3 + 1) * 20;
+            ctx.beginPath();
+            ctx.moveTo(hx, h);
+            ctx.quadraticCurveTo(hx + 125, h - hh, hx + 250, h);
+            ctx.fill();
+        }
+
+        // Layer 5: Nahe Bäume (größer, detaillierter)
+        const off4 = cam.x * 0.35;
+        for (let i = 0; i < 7; i++) {
+            const tx = i * 180 - (off4 % 180) - 60;
+            const th = 70 + Math.sin(i * 2.9 + 0.5) * 25;
+            const baseY = h;
+
+            // Stamm (braun)
+            ctx.fillStyle = '#3a2a15';
+            ctx.fillRect(tx + 12, baseY - th + 30, 10, th - 30);
+
+            // Krone (mehrere Kreise)
+            ctx.fillStyle = '#2a5a2a';
+            ctx.beginPath();
+            ctx.arc(tx + 17, baseY - th + 20, 20, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#2a6a2a';
+            ctx.beginPath();
+            ctx.arc(tx + 8, baseY - th + 28, 16, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(tx + 26, baseY - th + 26, 14, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Layer 6: Büsche im Vordergrund
+        const off5 = cam.x * 0.45;
+        ctx.fillStyle = '#2a5a2a';
+        for (let i = 0; i < 8; i++) {
+            const bx = i * 140 - (off5 % 140) - 30;
+            const bw = 30 + Math.sin(i * 4.1) * 10;
+            ctx.beginPath();
+            ctx.arc(bx, h - 4, bw / 2, Math.PI, 0);
+            ctx.fill();
+            // Helleres Highlight
+            ctx.fillStyle = '#3a6a3a';
+            ctx.beginPath();
+            ctx.arc(bx + 4, h - 8, bw / 3, Math.PI, 0);
+            ctx.fill();
+            ctx.fillStyle = '#2a5a2a';
+        }
+    }
+
+    renderSkyBg(ctx, w, h, cam) {
+        // Wolken (groß, langsam)
+        const cloudOff = cam.x * 0.05;
+        ctx.fillStyle = '#fff';
+        ctx.globalAlpha = 0.15;
+        for (let i = 0; i < 6; i++) {
+            const cx = i * 200 - (cloudOff % 200) - 50;
+            const cy = 100 + Math.sin(i * 1.8) * 60;
+            ctx.beginPath();
+            ctx.arc(cx, cy, 40, 0, Math.PI * 2);
+            ctx.arc(cx + 35, cy - 10, 30, 0, Math.PI * 2);
+            ctx.arc(cx + 60, cy, 35, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+
+        // Ferne Berge (unten)
+        const off1 = cam.x * 0.1;
+        ctx.fillStyle = '#6a8aaa';
+        ctx.globalAlpha = 0.3;
+        for (let i = 0; i < 6; i++) {
+            const hx = i * 200 - (off1 % 200) - 100;
+            const hh = 40 + Math.sin(i * 1.5) * 20;
+            ctx.beginPath();
+            ctx.moveTo(hx, h);
+            ctx.quadraticCurveTo(hx + 100, h - hh, hx + 200, h);
+            ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+    }
+
+    renderLavaBg(ctx, w, h, cam) {
+        // Rauch-Wolken
+        const smokeOff = cam.x * 0.06;
+        ctx.fillStyle = '#4a2a1a';
+        ctx.globalAlpha = 0.25;
+        for (let i = 0; i < 5; i++) {
+            const cx = i * 240 - (smokeOff % 240) - 60;
+            const cy = 80 + Math.sin(i * 1.9) * 40;
+            ctx.beginPath();
+            ctx.arc(cx, cy, 35, 0, Math.PI * 2);
+            ctx.arc(cx + 40, cy + 5, 28, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+
+        // Vulkan-Silhouetten
+        const off1 = cam.x * 0.12;
+        ctx.fillStyle = '#2a1008';
+        for (let i = 0; i < 4; i++) {
+            const vx = i * 300 - (off1 % 300) - 100;
+            const vh = 90 + Math.sin(i * 2.1) * 30;
+            ctx.beginPath();
+            ctx.moveTo(vx, h);
+            ctx.lineTo(vx + 80, h - vh);
+            ctx.lineTo(vx + 100, h - vh + 10);
+            ctx.lineTo(vx + 120, h - vh);
+            ctx.lineTo(vx + 200, h);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        // Lava-Glühen unten
+        ctx.fillStyle = '#ff440044';
+        ctx.globalAlpha = 0.15 + Math.sin(Date.now() / 500) * 0.05;
+        ctx.fillRect(0, h - 60, w, 60);
+        ctx.globalAlpha = 1;
     }
 
     renderHUD(ctx) {

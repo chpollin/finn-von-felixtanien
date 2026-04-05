@@ -261,7 +261,7 @@ export class PlayingState extends GameState {
 
         // Parallax
         if (theme !== 'cave' && theme !== 'castle') {
-            game.renderBackground(ctx);
+            game.renderBackground(ctx, theme);
         }
 
         // Dunkelheits-Vignette für Schattenpfad
