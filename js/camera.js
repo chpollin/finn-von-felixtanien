@@ -20,6 +20,14 @@ export class Camera {
         this.maxY = Math.max(0, levelHeight - this.viewHeight);
     }
 
+    /** Kamera sofort zum Ziel snappen (kein Lerp) */
+    snapTo(target) {
+        this.x = target.x + target.width / 2 - this.viewWidth / 2;
+        this.y = target.y + target.height / 2 - this.viewHeight / 2 - 30;
+        this.x = Math.max(this.minX, Math.min(this.maxX, this.x));
+        this.y = Math.max(this.minY, Math.min(this.maxY, this.y));
+    }
+
     follow(target) {
         // Zielposition: Spieler zentriert, leicht nach oben versetzt
         const targetX = target.x + target.width / 2 - this.viewWidth / 2;

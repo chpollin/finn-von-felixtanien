@@ -66,6 +66,9 @@ export class PlayingState extends GameState {
         game.score = index > 0 ? prevScore : 0;
         game.addEntity(player);
 
+        // Kamera sofort zum Spieler snappen (kein Lerp vom alten Level)
+        game.camera.snapTo(player);
+
         // Feinde spawnen
         spawnEnemiesForLevel(game, level);
 
