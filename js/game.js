@@ -174,13 +174,16 @@ export class Game {
     }
 
     renderForestBg(ctx, w, h, cam) {
+        // Bodenlinie (wo Gras-Tiles beginnen — alles darüber ist Hintergrund)
+        const groundY = h - 65;
+
         // Layer 1: Wolken (sehr langsam)
         const cloudOff = cam.x * 0.03;
-        ctx.fillStyle = '#3a4a6a';
-        ctx.globalAlpha = 0.3;
+        ctx.fillStyle = '#5a6a8a';
+        ctx.globalAlpha = 0.25;
         for (let i = 0; i < 5; i++) {
             const cx = i * 220 - (cloudOff % 220) - 50;
-            const cy = 60 + Math.sin(i * 2.1) * 30;
+            const cy = 50 + Math.sin(i * 2.1) * 25;
             ctx.beginPath();
             ctx.arc(cx, cy, 30, 0, Math.PI * 2);
             ctx.arc(cx + 25, cy - 8, 24, 0, Math.PI * 2);
@@ -190,87 +193,112 @@ export class Game {
         }
         ctx.globalAlpha = 1;
 
-        // Layer 2: Ferne Berge/Hügel
+        // Layer 2: Ferne Berge
         const off1 = cam.x * 0.08;
         ctx.fillStyle = '#1a3a2a';
         for (let i = 0; i < 6; i++) {
             const hx = i * 200 - (off1 % 200) - 100;
-            const hh = 80 + Math.sin(i * 1.7) * 40;
+            const hh = 100 + Math.sin(i * 1.7) * 40;
             ctx.beginPath();
-            ctx.moveTo(hx, h);
-            ctx.quadraticCurveTo(hx + 100, h - hh, hx + 200, h);
+            ctx.moveTo(hx, groundY);
+            ctx.quadraticCurveTo(hx + 100, groundY - hh, hx + 200, groundY);
             ctx.fill();
         }
 
-        // Layer 3: Ferne Bäume (Silhouetten, dunkel)
+        // Layer 3: Ferne Bäume (Tannen-Silhouetten)
         const off2 = cam.x * 0.15;
         ctx.fillStyle = '#1a3828';
-        for (let i = 0; i < 10; i++) {
-            const tx = i * 120 - (off2 % 120) - 40;
-            const th = 50 + Math.sin(i * 3.7) * 20;
-            // Stamm
-            ctx.fillRect(tx + 8, h - th + 20, 6, th - 20);
-            // Krone (Dreieck)
+        for (let i = 0; i < 12; i++) {
+            const tx = i * 100 - (off2 % 100) - 40;
+            const th = 60 + Math.sin(i * 3.7) * 20;
+            const by = groundY;
+            ctx.fillRect(tx + 8, by - th + 15, 5, th - 15);
             ctx.beginPath();
-            ctx.moveTo(tx - 4, h - th + 24);
-            ctx.lineTo(tx + 11, h - th - 10);
-            ctx.lineTo(tx + 26, h - th + 24);
+            ctx.moveTo(tx - 2, by - th + 20);
+            ctx.lineTo(tx + 11, by - th - 14);
+            ctx.lineTo(tx + 24, by - th + 20);
+            ctx.closePath();
+            ctx.fill();
+            // Zweite Krone-Ebene
+            ctx.beginPath();
+            ctx.moveTo(tx + 1, by - th + 30);
+            ctx.lineTo(tx + 11, by - th + 5);
+            ctx.lineTo(tx + 21, by - th + 30);
             ctx.closePath();
             ctx.fill();
         }
 
-        // Layer 4: Nähere Hügel mit Gras
+        // Layer 4: Nähere Hügel
         const off3 = cam.x * 0.25;
         ctx.fillStyle = '#2a4a2a';
         for (let i = 0; i < 5; i++) {
             const hx = i * 250 - (off3 % 250) - 125;
-            const hh = 45 + Math.sin(i * 2.3 + 1) * 20;
+            const hh = 40 + Math.sin(i * 2.3 + 1) * 18;
             ctx.beginPath();
-            ctx.moveTo(hx, h);
-            ctx.quadraticCurveTo(hx + 125, h - hh, hx + 250, h);
+            ctx.moveTo(hx, groundY);
+            ctx.quadraticCurveTo(hx + 125, groundY - hh, hx + 250, groundY);
             ctx.fill();
         }
 
-        // Layer 5: Nahe Bäume (größer, detaillierter)
+        // Layer 5: Nahe Bäume (Laubbäume über der Bodenlinie)
         const off4 = cam.x * 0.35;
         for (let i = 0; i < 7; i++) {
             const tx = i * 180 - (off4 % 180) - 60;
-            const th = 70 + Math.sin(i * 2.9 + 0.5) * 25;
-            const baseY = h;
+            const th = 80 + Math.sin(i * 2.9 + 0.5) * 25;
+            const by = groundY;
 
-            // Stamm (braun)
+            // Stamm
             ctx.fillStyle = '#3a2a15';
-            ctx.fillRect(tx + 12, baseY - th + 30, 10, th - 30);
+            ctx.fillRect(tx + 12, by - th + 40, 10, th - 40);
 
-            // Krone (mehrere Kreise)
+            // Krone (Kreise, ÜBER der Bodenlinie)
             ctx.fillStyle = '#2a5a2a';
             ctx.beginPath();
-            ctx.arc(tx + 17, baseY - th + 20, 20, 0, Math.PI * 2);
+            ctx.arc(tx + 17, by - th + 24, 22, 0, Math.PI * 2);
             ctx.fill();
             ctx.fillStyle = '#2a6a2a';
             ctx.beginPath();
-            ctx.arc(tx + 8, baseY - th + 28, 16, 0, Math.PI * 2);
+            ctx.arc(tx + 6, by - th + 34, 16, 0, Math.PI * 2);
             ctx.fill();
+            ctx.fillStyle = '#336a33';
             ctx.beginPath();
-            ctx.arc(tx + 26, baseY - th + 26, 14, 0, Math.PI * 2);
+            ctx.arc(tx + 28, by - th + 30, 15, 0, Math.PI * 2);
+            ctx.fill();
+            // Highlight oben
+            ctx.fillStyle = '#3a7a3a';
+            ctx.beginPath();
+            ctx.arc(tx + 15, by - th + 18, 10, 0, Math.PI * 2);
             ctx.fill();
         }
 
-        // Layer 6: Büsche im Vordergrund
+        // Layer 6: Büsche (knapp über Bodenlinie)
         const off5 = cam.x * 0.45;
-        ctx.fillStyle = '#2a5a2a';
         for (let i = 0; i < 8; i++) {
             const bx = i * 140 - (off5 % 140) - 30;
-            const bw = 30 + Math.sin(i * 4.1) * 10;
+            const bw = 28 + Math.sin(i * 4.1) * 8;
+            ctx.fillStyle = '#2a5a2a';
             ctx.beginPath();
-            ctx.arc(bx, h - 4, bw / 2, Math.PI, 0);
+            ctx.arc(bx, groundY, bw / 2, Math.PI, 0);
             ctx.fill();
-            // Helleres Highlight
             ctx.fillStyle = '#3a6a3a';
             ctx.beginPath();
-            ctx.arc(bx + 4, h - 8, bw / 3, Math.PI, 0);
+            ctx.arc(bx + 3, groundY - 4, bw / 3, Math.PI, 0);
             ctx.fill();
-            ctx.fillStyle = '#2a5a2a';
+        }
+
+        // Next-Level-Hint: Höhleneingang am rechten Rand
+        if (this.tilemap) {
+            const hintX = this.tilemap.widthPx - 80 - cam.x * 0.4;
+            if (hintX > w - 200 && hintX < w + 50) {
+                ctx.fillStyle = '#1a1a2a';
+                ctx.beginPath();
+                ctx.arc(hintX, groundY, 35, Math.PI, 0);
+                ctx.fill();
+                ctx.fillStyle = '#0a0a14';
+                ctx.beginPath();
+                ctx.arc(hintX, groundY, 22, Math.PI, 0);
+                ctx.fill();
+            }
         }
     }
 

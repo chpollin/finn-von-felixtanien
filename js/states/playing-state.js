@@ -25,11 +25,15 @@ export class PlayingState extends GameState {
         this.savedActive = null;
         this.boss = null;
         this.princessSpawned = false;
+
+        // Level-Übergang
+        this.transition = null; // { phase, timer, text, nextLevel, elements, active, score }
     }
 
     enter(game) {
         this.savedElements = null;
         this.savedActive = null;
+        this.transition = null;
         this.loadLevel(game, 0);
     }
 
@@ -133,20 +137,71 @@ export class PlayingState extends GameState {
         this.levelName = level.name;
     }
 
+    // Story-Texte zwischen Levels
+    getTransitionText(fromLevel) {
+        const texts = [
+            'Der Wald liegt hinter Finn.\nVor ihm öffnet sich der Eingang\nzu den Tiefen Höhlen...',
+            'Die Höhlen werden heißer.\nEin roter Schein leuchtet\naus der Tiefe...',
+            'Finn entkommt dem Feuer.\nÜber ihm erstrecken sich\ndie Windklippen...',
+            'Hoch über den Wolken\nführt der Weg hinab\nin die Dunkelheit...',
+            'Durch den Schatten hindurch\nerhebt sich das Schloss\nvon Garnonstadt!',
+            'Das war eine Falle!\nDie echte Lea muss\nim Kerker sein!',
+        ];
+        return texts[fromLevel] || '';
+    }
+
+    startTransition(game, nextLevel) {
+        this.transition = {
+            phase: 'fadeout',  // fadeout → text → fadein
+            timer: 0,
+            text: this.getTransitionText(game.currentLevel),
+            nextLevel,
+            elements: game.player ? new Set(game.player.elements) : new Set(),
+            activeElement: game.player ? game.player.activeElement : null,
+            score: game.score,
+            typewriterPos: 0,
+        };
+    }
+
     update(dt, game) {
         if (this.levelNameTimer > 0) this.levelNameTimer -= dt;
 
-        // Pending Level-Wechsel (von Door ausgelöst)
+        // --- Level-Übergang ---
+        if (this.transition) {
+            this.transition.timer += dt;
+            const t = this.transition;
+
+            if (t.phase === 'fadeout' && t.timer >= 0.8) {
+                // Fade-out fertig → Level laden + Text zeigen
+                t.phase = 'text';
+                t.timer = 0;
+                t.typewriterPos = 0;
+                this.loadLevel(game, t.nextLevel);
+                game.score = t.score;
+                if (game.player) {
+                    game.player.elements = t.elements;
+                    game.player.activeElement = t.activeElement;
+                }
+            } else if (t.phase === 'text') {
+                // Typewriter-Effekt
+                t.typewriterPos += dt * 30;
+                // Nach 3s oder Enter → Fade-in
+                if (t.timer >= 3 || game.input.justPressed('Enter') || game.input.justPressed('Space')) {
+                    t.phase = 'fadein';
+                    t.timer = 0;
+                }
+            } else if (t.phase === 'fadein' && t.timer >= 0.8) {
+                this.transition = null;
+            }
+            return; // Kein normales Update während Übergang
+        }
+
+        // Pending Level-Wechsel (von Door ausgelöst) → Transition starten
         if (game._pendingLevelChange) {
             const pending = game._pendingLevelChange;
             game._pendingLevelChange = null;
-            this.loadLevel(game, pending.level);
-            game.score = pending.score;
-            if (game.player) {
-                game.player.elements = pending.elements;
-                game.player.activeElement = pending.activeElement;
-            }
-            return; // Diesen Frame überspringen, nächster Frame startet sauber
+            this.startTransition(game, pending.level);
+            return;
         }
 
         // Pause
@@ -297,7 +352,7 @@ export class PlayingState extends GameState {
         }
 
         // Level-Name Einblendung
-        if (this.levelNameTimer > 0) {
+        if (this.levelNameTimer > 0 && !this.transition) {
             const alpha = this.levelNameTimer > 1.5
                 ? Math.min(1, (2.5 - this.levelNameTimer) * 2)
                 : this.levelNameTimer / 1.5;
@@ -309,6 +364,76 @@ export class PlayingState extends GameState {
             ctx.textAlign = 'center';
             ctx.fillText(this.levelName, width / 2, height / 2 + 8);
             ctx.textAlign = 'start';
+            ctx.globalAlpha = 1;
+        }
+
+        // --- Level-Übergangs-Overlay ---
+        if (this.transition) {
+            this.renderTransition(ctx, width, height);
+        }
+    }
+
+    renderTransition(ctx, w, h) {
+        const t = this.transition;
+
+        if (t.phase === 'fadeout') {
+            // Schwarzes Overlay faded ein
+            ctx.globalAlpha = Math.min(1, t.timer / 0.8);
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, w, h);
+            ctx.globalAlpha = 1;
+        } else if (t.phase === 'text') {
+            // Schwarzer Hintergrund + Typewriter-Text
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, w, h);
+
+            // Sterne im Hintergrund
+            ctx.fillStyle = '#fff';
+            ctx.globalAlpha = 0.2;
+            for (let i = 0; i < 30; i++) {
+                const sx = (i * 137 + 50) % w;
+                const sy = (i * 89 + 30) % h;
+                ctx.fillRect(sx, sy, 1, 1);
+            }
+            ctx.globalAlpha = 1;
+
+            // Text mit Typewriter-Effekt
+            const lines = t.text.split('\n');
+            const fullText = t.text.replace(/\n/g, '');
+            const visibleChars = Math.floor(t.typewriterPos);
+
+            ctx.font = '20px "Segoe UI", system-ui, sans-serif';
+            ctx.textAlign = 'center';
+
+            let charCount = 0;
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i];
+                let visibleLine = '';
+                for (let c = 0; c < line.length; c++) {
+                    if (charCount < visibleChars) {
+                        visibleLine += line[c];
+                    }
+                    charCount++;
+                }
+                ctx.fillStyle = '#c8b878';
+                ctx.fillText(visibleLine, w / 2, h / 2 - 30 + i * 30);
+            }
+
+            // "Weiter" Hinweis
+            if (t.timer > 1.5) {
+                const blink = Math.sin(t.timer * 4) > 0;
+                if (blink) {
+                    ctx.fillStyle = '#666';
+                    ctx.font = '14px "Segoe UI", system-ui, sans-serif';
+                    ctx.fillText('Drücke ENTER', w / 2, h / 2 + 80);
+                }
+            }
+            ctx.textAlign = 'start';
+        } else if (t.phase === 'fadein') {
+            // Schwarzes Overlay faded aus
+            ctx.globalAlpha = 1 - Math.min(1, t.timer / 0.8);
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, w, h);
             ctx.globalAlpha = 1;
         }
     }
