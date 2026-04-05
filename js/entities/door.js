@@ -13,24 +13,13 @@ export class Door extends Entity {
         this.timer += dt;
         if (game.player && this.collidesWith(game.player) && !this.activated) {
             this.activated = true;
-            // Nächstes Level laden
-            const next = game.currentLevel + 1;
-            const playingState = game.states.get('playing');
-            if (playingState && playingState.loadLevel) {
-                // Elemente vom Spieler retten
-                const savedElements = new Set(game.player.elements);
-                const savedActive = game.player.activeElement;
-                const savedScore = game.score;
-
-                playingState.loadLevel(game, next);
-                game.score = savedScore;
-
-                // Elemente wiederherstellen
-                if (game.player) {
-                    game.player.elements = savedElements;
-                    game.player.activeElement = savedActive;
-                }
-            }
+            // Level-Wechsel für nächsten Frame vormerken
+            game._pendingLevelChange = {
+                level: game.currentLevel + 1,
+                elements: new Set(game.player.elements),
+                activeElement: game.player.activeElement,
+                score: game.score,
+            };
         }
     }
 

@@ -136,6 +136,19 @@ export class PlayingState extends GameState {
     update(dt, game) {
         if (this.levelNameTimer > 0) this.levelNameTimer -= dt;
 
+        // Pending Level-Wechsel (von Door ausgelöst)
+        if (game._pendingLevelChange) {
+            const pending = game._pendingLevelChange;
+            game._pendingLevelChange = null;
+            this.loadLevel(game, pending.level);
+            game.score = pending.score;
+            if (game.player) {
+                game.player.elements = pending.elements;
+                game.player.activeElement = pending.activeElement;
+            }
+            return; // Diesen Frame überspringen, nächster Frame startet sauber
+        }
+
         // Pause
         if (game.input.justPressed('Escape')) {
             game.setState('pause');

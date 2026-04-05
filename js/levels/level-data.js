@@ -167,7 +167,7 @@ const level4 = {
 // === Level 5: Der Schattenpfad ===
 const level5 = {
     name: 'Der Schattenpfad',
-    playerStart: { x: 48, y: 480 },
+    playerStart: { x: 48, y: 496 },
     theme: 'dark',
     tiles: [
         [2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2], // 0 Decke
