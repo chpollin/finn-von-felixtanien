@@ -40,7 +40,7 @@ class ShadowBolt extends Entity {
 
         // Spieler treffen
         if (game.player && !game.player.invincible && this.collidesWith(game.player)) {
-            game.player.takeDamage(this.damage);
+            game.player.takeDamage(this.damage, null, game);
             if (game.player.vx !== undefined) {
                 game.player.vx = this.vx > 0 ? 150 : -150;
                 game.player.vy = -80;
@@ -145,7 +145,9 @@ export class OrcDark extends Enemy {
                 const dir = dx > 0 ? 1 : -1;
                 const bx = this.x + this.width / 2 + dir * 14;
                 const by = this.y + 12;
-                game.addEntity(new ShadowBolt(bx, by, dir));
+                const bolt = new ShadowBolt(bx, by, dir);
+                bolt.damage = Math.round(bolt.damage * (this._damageMult || 1));
+                game.addEntity(bolt);
                 this.shootCooldown = this.shootCooldownMax;
                 this.shooting = true;
                 this.shootAnim = 0.3;

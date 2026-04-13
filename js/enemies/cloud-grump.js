@@ -52,6 +52,7 @@ export class CloudGrump extends Entity {
 
         // Visuell
         this.angry = false;
+        this._angryTimer = 0;
         this.invincible = false;
         this.invincibleTimer = 0;
         this.invincibleDuration = 0.3;
@@ -76,6 +77,12 @@ export class CloudGrump extends Entity {
         }
 
         this.timer += dt;
+
+        // Angry-Timer (dt-basiert statt setTimeout)
+        if (this._angryTimer > 0) {
+            this._angryTimer -= dt;
+            if (this._angryTimer <= 0) this.angry = false;
+        }
 
         // i-Frames
         if (this.invincible) {
@@ -111,7 +118,7 @@ export class CloudGrump extends Entity {
             if (game.player && !game.player.invincible) {
                 const px = game.player.x + game.player.width / 2;
                 if (Math.abs(px - this.lightningX) < 16 && game.player.y > this.y) {
-                    game.player.takeDamage(this.damage);
+                    game.player.takeDamage(this.damage, null, game);
                     if (game.player.vy !== undefined) {
                         game.player.vy = -100;
                     }
@@ -134,13 +141,13 @@ export class CloudGrump extends Entity {
                 this.currentQuote = 'BRRRZZT!';
                 this.quoteDisplay = 1;
                 if (game.audio) game.audio.play('hit');
-                setTimeout(() => { this.angry = false; }, 500);
+                this._angryTimer = 0.5;
             }
         }
 
         // Kontaktschaden
         if (game.player && this.collidesWith(game.player) && !game.player.invincible) {
-            game.player.takeDamage(this.damage);
+            game.player.takeDamage(this.damage, null, game);
             game.player.vy = -150;
             game.player.grounded = false;
         }

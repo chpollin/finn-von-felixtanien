@@ -1,5 +1,5 @@
 import { Entity } from './entity.js';
-import { getElementColor, getElementGlow } from './elements.js';
+import { getElementColor, getElementGlow, getEffectiveness } from './elements.js';
 
 /** Basis-Projektil: fliegt in eine Richtung und trifft Gegner */
 export class Projectile extends Entity {
@@ -46,13 +46,29 @@ export class Projectile extends Entity {
     }
 
     onHitEnemy(enemy, game) {
-        enemy.takeDamage(this.damage, this.element);
+        const mult = getEffectiveness(this.element, enemy.element);
+        const actualDmg = Math.round(this.damage * mult);
+        enemy.takeDamage(actualDmg, this.element);
+
         if (game.particles) {
-            game.particles.emitHit(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, getElementColor(this.element));
-            game.particles.showDamage(enemy.x + enemy.width / 2, enemy.y - 8, this.damage, getElementColor(this.element));
+            const hx = enemy.x + enemy.width / 2;
+            const hy = enemy.y;
+            game.particles.emitHit(hx, hy + enemy.height / 2, getElementColor(this.element));
+
+            if (mult >= 2) {
+                game.particles.showDamage(hx, hy - 24, 'SUPER!', '#ff0');
+                game.particles.showDamage(hx, hy - 8, actualDmg, '#ff0');
+                game.particles.emit(hx, hy + enemy.height / 2, 20, {
+                    color: getElementColor(this.element), speed: 200, life: 0.5, size: 5
+                });
+            } else if (mult <= 0.5) {
+                game.particles.showDamage(hx, hy - 8, actualDmg, '#888');
+            } else {
+                game.particles.showDamage(hx, hy - 8, actualDmg, getElementColor(this.element));
+            }
         }
         if (game.audio) game.audio.play('hit');
-        if (game.screenFx) game.screenFx.shake(3, 0.1);
+        if (game.screenFx) game.screenFx.shake(mult >= 2 ? 5 : 3, 0.1);
     }
 
     onHitWall(game) {
@@ -196,7 +212,9 @@ export class Vine extends Projectile {
     }
 
     onHitEnemy(enemy, game) {
-        enemy.takeDamage(this.damage, this.element);
+        const mult = getEffectiveness(this.element, enemy.element);
+        const actualDmg = Math.round(this.damage * mult);
+        enemy.takeDamage(actualDmg, this.element);
         enemy.vx = 0;
         enemy.vy = 0;
 
@@ -297,7 +315,9 @@ export class Tornado extends Projectile {
     }
 
     onHitEnemy(enemy, game) {
-        enemy.takeDamage(this.damage, this.element);
+        const mult = getEffectiveness(this.element, enemy.element);
+        const actualDmg = Math.round(this.damage * mult);
+        enemy.takeDamage(actualDmg, this.element);
         // Hochschleudern!
         enemy.vy = this.launchForce;
         enemy.vx = this.vx * 0.3;
@@ -364,7 +384,9 @@ export class Curse extends Projectile {
     }
 
     onHitEnemy(enemy, game) {
-        enemy.takeDamage(this.damage, this.element);
+        const mult = getEffectiveness(this.element, enemy.element);
+        const actualDmg = Math.round(this.damage * mult);
+        enemy.takeDamage(actualDmg, this.element);
 
         // Fluch anwenden: Doppelter Schaden (dt-basiert)
         if (!enemy._cursed) {
@@ -466,12 +488,22 @@ export class LightBeam extends Entity {
             // Prüfe ob Gegner in der Säule ist (nur X-Achse relevant)
             if (entity.x + entity.width > this.targetX - this.width / 2 &&
                 entity.x < this.targetX + this.width / 2) {
-                entity.takeDamage(this.damage, this.element);
+                const mult = getEffectiveness(this.element, entity.element);
+                const actualDmg = Math.round(this.damage * mult);
+                entity.takeDamage(actualDmg, this.element);
                 this.hasHit.add(entity);
 
                 if (game.particles) {
-                    game.particles.emitHit(entity.x + entity.width / 2, entity.y, '#ffee00');
-                    game.particles.showDamage(entity.x + entity.width / 2, entity.y - 16, this.damage, '#ffff88');
+                    const hx = entity.x + entity.width / 2;
+                    if (mult >= 2) {
+                        game.particles.showDamage(hx, entity.y - 24, 'SUPER!', '#ff0');
+                        game.particles.showDamage(hx, entity.y - 8, actualDmg, '#ff0');
+                    } else if (mult <= 0.5) {
+                        game.particles.showDamage(hx, entity.y - 8, actualDmg, '#888');
+                    } else {
+                        game.particles.showDamage(hx, entity.y - 8, actualDmg, '#ffff88');
+                    }
+                    game.particles.emitHit(hx, entity.y, '#ffee00');
                 }
                 if (game.audio) game.audio.play('hit');
                 if (game.screenFx) game.screenFx.shake(5, 0.15);

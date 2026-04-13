@@ -8,6 +8,7 @@ import { PlayingState } from './states/playing-state.js';
 import { PauseState } from './states/pause-state.js';
 import { GameOverState } from './states/gameover-state.js';
 import { VictoryState } from './states/victory-state.js';
+import { DifficultyState } from './states/difficulty-state.js';
 
 export class Game {
     constructor(canvas) {
@@ -22,6 +23,7 @@ export class Game {
         canvas.height = this.height;
 
         this.score = 0;
+        this.difficulty = 'normal';
         this.entities = [];
         this.player = null;
         this.tilemap = null;
@@ -58,6 +60,7 @@ export class Game {
         this.states.set('pause', new PauseState());
         this.states.set('gameover', new GameOverState());
         this.states.set('victory', new VictoryState());
+        this.states.set('difficulty', new DifficultyState());
         this.currentState = null;
         this.currentStateName = null;
     }

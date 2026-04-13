@@ -3,6 +3,7 @@ import { applyGravity, clamp, FRICTION } from './physics.js';
 import { createAttackHitbox, hitboxOverlaps, applyKnockback } from './combat.js';
 import { getEffectiveness, getElementColor, getElementGlow } from './elements.js';
 import { createRangedAttack } from './projectile.js';
+import { TILE } from './tilemap.js';
 
 export class Player extends Entity {
     constructor(x, y) {
@@ -43,6 +44,16 @@ export class Player extends Entity {
         this.invincible = false;
         this.invincibleTimer = 0;
         this.invincibleDuration = 0.8;
+
+        // Coyote Time + Jump Buffer
+        this.coyoteTimer = 0;
+        this.coyoteTime = 0.1;
+        this.jumpBufferTimer = 0;
+        this.jumpBufferTime = 0.1;
+        this.wasGrounded = false;
+
+        // Spike-Schaden
+        this._spikeTimer = 0;
 
         // Animation
         this.animTimer = 0;
@@ -152,11 +163,20 @@ export class Player extends Entity {
             if (this.grounded && !this.attacking) this.state = 'idle';
         }
 
-        // --- Sprung ---
-        const jumpPressed = input.isKeyDown('ArrowUp') || input.isKeyDown('KeyW') || input.isKeyDown('Space');
-        if (jumpPressed && this.grounded) {
+        // --- Sprung (mit Coyote Time + Jump Buffer) ---
+        const jumpHeld = input.isKeyDown('ArrowUp') || input.isKeyDown('KeyW') || input.isKeyDown('Space');
+        const jumpJust = input.justPressed('ArrowUp') || input.justPressed('KeyW') || input.justPressed('Space');
+        // Jump Buffer: justPressed in der Luft → merken
+        if (jumpJust) this.jumpBufferTimer = this.jumpBufferTime;
+        if (this.jumpBufferTimer > 0) this.jumpBufferTimer -= dt;
+
+        // Sprung ausführen: entweder gehalten+grounded (Original) oder Buffer+Coyote
+        const canCoyote = this.coyoteTimer > 0;
+        if ((jumpHeld && this.grounded) || (this.jumpBufferTimer > 0 && canCoyote)) {
             this.vy = this.jumpForce;
             this.grounded = false;
+            this.coyoteTimer = 0;
+            this.jumpBufferTimer = 0;
             if (!this.attacking) this.state = 'jump';
             if (game.audio) game.audio.play('jump');
         }
@@ -174,17 +194,36 @@ export class Player extends Entity {
         this.y += this.vy * dt;
 
         // --- Tile-Kollision ---
+        const wasGroundedBefore = this.grounded;
         this.grounded = false;
         if (game.tilemap) {
             game.tilemap.resolveCollision(this);
+        }
+
+        // Coyote Time: Wenn gerade den Boden verlassen, kurzes Sprungfenster
+        if (wasGroundedBefore && !this.grounded) {
+            this.coyoteTimer = this.coyoteTime;
+        }
+        if (this.coyoteTimer > 0 && !this.grounded) this.coyoteTimer -= dt;
+        if (this.grounded) this.coyoteTimer = 0;
+
+        // --- Spike-Schaden ---
+        if (this._spikeTimer > 0) this._spikeTimer -= dt;
+        if (game.tilemap && this.grounded && this._spikeTimer <= 0) {
+            const footTile = game.tilemap.getTileAtWorld(this.x + this.width / 2, this.y + this.height + 1);
+            if (footTile === TILE.SPIKE) {
+                this.takeDamage(15, null, game);
+                this._spikeTimer = 0.5;
+            }
         }
 
         // --- Level-Grenzen ---
         if (game.tilemap) {
             this.x = clamp(this.x, 0, game.tilemap.widthPx - this.width);
             if (this.y > game.tilemap.heightPx + 64) {
-                this.health -= 20;
-                if (this.health <= 0) this.health = 1;
+                const fallDmg = Math.round(20 * (this._fallDamageMult || 1));
+                this.health -= fallDmg;
+                if (this._fallSafe && this.health <= 0) this.health = 1;
                 this.x = game.levelStart.x;
                 this.y = game.levelStart.y;
                 this.vx = 0;
@@ -251,6 +290,7 @@ export class Player extends Entity {
         this.invincible = true;
         this.invincibleTimer = this.invincibleDuration;
         if (this.health <= 0) this.health = 0;
+        if (game && game.audio) game.audio.play('hurt');
         return amount;
     }
 

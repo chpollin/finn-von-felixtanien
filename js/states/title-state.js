@@ -21,7 +21,7 @@ export class TitleState extends GameState {
         this.starTimer += dt;
 
         if (game.input.justPressed('Enter') || game.input.justPressed('Space')) {
-            game.setState('playing');
+            game.setState('difficulty');
         }
     }
 

@@ -51,6 +51,14 @@ export class Boss extends Enemy {
         this.glowTimer = 0;
         this.defeated = false;
 
+        // Phasen-Schwellen (überschreibbar durch Difficulty)
+        this.phase2Threshold = 0.5;
+        this.phase3Threshold = 0.25;
+
+        // Difficulty-Multiplikatoren (werden von playing-state gesetzt)
+        this._damageMult = 1;
+        this._minionHealthMult = 1;
+
         // Sprüche
         this.quoteTimer = 2;
         this.currentQuote = '';
@@ -94,10 +102,10 @@ export class Boss extends Enemy {
         // --- Phasen-Wechsel ---
         const hpRatio = this.health / this.maxHealth;
 
-        if (hpRatio <= 0.25 && this.phase < 3) {
+        if (hpRatio <= this.phase3Threshold && this.phase < 3) {
             this.phase = 3;
             this.onPhaseChange(3, game);
-        } else if (hpRatio <= 0.5 && this.phase < 2) {
+        } else if (hpRatio <= this.phase2Threshold && this.phase < 2) {
             this.phase = 2;
             this.onPhaseChange(2, game);
         }
@@ -162,7 +170,7 @@ export class Boss extends Enemy {
                 if (game.player && !game.player.invincible) {
                     const dist = Math.abs(game.player.x - (this.x + this.width / 2));
                     if (dist < 100 && game.player.grounded) {
-                        game.player.takeDamage(20);
+                        game.player.takeDamage(Math.round(20 * this._damageMult), null, game);
                         game.player.vy = -300;
                         game.player.grounded = false;
                     }
@@ -184,7 +192,7 @@ export class Boss extends Enemy {
 
         if (newPhase === 2) {
             this.chaseSpeed = 110;
-            this.damage = 30;
+            this.damage = Math.round(30 * this._damageMult);
             this.attackCooldownMax = 1.0;
             // Größer werden
             this.width = 56;
@@ -192,7 +200,7 @@ export class Boss extends Enemy {
             this.currentQuote = 'GENUG!\nJetzt wird es\nERNST!';
         } else if (newPhase === 3) {
             this.chaseSpeed = 140;
-            this.damage = 35;
+            this.damage = Math.round(35 * this._damageMult);
             this.attackCooldownMax = 0.7;
             // Noch größer
             this.width = 64;
@@ -212,12 +220,13 @@ export class Boss extends Enemy {
     }
 
     spawnMinion(game, x, y) {
+        const mhp = Math.round(25 * this._minionHealthMult);
         const minion = new Enemy(x, y);
         minion.width = 22;
         minion.height = 30;
-        minion.health = 25;
-        minion.maxHealth = 25;
-        minion.damage = 8;
+        minion.health = mhp;
+        minion.maxHealth = mhp;
+        minion.damage = Math.round(8 * this._damageMult);
         minion.speed = 70;
         minion.chaseSpeed = 120;
         minion.sightRange = 300;
@@ -240,7 +249,7 @@ export class Boss extends Enemy {
             minion.renderHealthBar(ctx);
             ctx.globalAlpha = 1;
         };
-        minion.onDeath = () => { game.score += 25; };
+        minion.onDeath = () => { game.score += Math.round(25 * (game._scoreMultiplier || 1)); };
         game.addEntity(minion);
     }
 
@@ -472,8 +481,8 @@ export class Boss extends Enemy {
         // Phasen-Markierungen
         ctx.strokeStyle = '#fff8';
         ctx.lineWidth = 1;
-        ctx.beginPath(); ctx.moveTo(bx + barW * 0.5, by); ctx.lineTo(bx + barW * 0.5, by + barH); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(bx + barW * 0.25, by); ctx.lineTo(bx + barW * 0.25, by + barH); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(bx + barW * this.phase2Threshold, by); ctx.lineTo(bx + barW * this.phase2Threshold, by + barH); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(bx + barW * this.phase3Threshold, by); ctx.lineTo(bx + barW * this.phase3Threshold, by + barH); ctx.stroke();
 
         ctx.strokeStyle = '#fff';
         ctx.lineWidth = 1;

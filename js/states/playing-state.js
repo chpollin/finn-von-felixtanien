@@ -14,6 +14,7 @@ import { CloudGrump } from '../enemies/cloud-grump.js';
 import { JumpPad } from '../entities/jumppad.js';
 import { Boss } from '../enemies/boss.js';
 import { ElementHUD } from '../ui/element-hud.js';
+import { getDifficulty } from '../difficulty.js';
 
 export class PlayingState extends GameState {
     constructor() {
@@ -61,6 +62,15 @@ export class PlayingState extends GameState {
 
         // Spieler erstellen
         const player = new Player(level.playerStart.x, level.playerStart.y);
+        // Schwierigkeitsgrad anwenden
+        const diff = getDifficulty(game);
+        player.maxHealth = diff.player.maxHealth;
+        player.health = diff.player.maxHealth;
+        player.attackPower = diff.player.attackPower;
+        player.invincibleDuration = diff.player.invincibleDuration;
+        player._fallDamageMult = diff.fallDamageMult;
+        player._fallSafe = diff.fallSafe;
+        game._scoreMultiplier = diff.scoreMultiplier;
         // Elemente wiederherstellen (außer beim allerersten Level)
         if (index > 0) {
             player.elements = prevElements;
@@ -81,7 +91,9 @@ export class PlayingState extends GameState {
             if (def.type === 'element-orb') {
                 game.addEntity(new ElementOrb(def.x, def.y, def.element));
             } else if (def.type === 'health-potion') {
-                game.addEntity(new HealthPotion(def.x, def.y));
+                const potion = new HealthPotion(def.x, def.y);
+                potion.healAmount = Math.round(potion.healAmount * diff.potionHealMult);
+                game.addEntity(potion);
             }
         }
 
@@ -111,7 +123,11 @@ export class PlayingState extends GameState {
             if (def.flyRange) cloud.flyRange = def.flyRange;
             cloud.flyOrigin = def.x;
             cloud.baseY = def.y;
-            cloud.onDeath = () => { game.score += 75; };
+            // Schwierigkeitsgrad auf Wolken anwenden
+            cloud.health = Math.round(cloud.health * diff.enemy.healthMult);
+            cloud.maxHealth = Math.round(cloud.maxHealth * diff.enemy.healthMult);
+            cloud.damage = Math.round(cloud.damage * diff.enemy.damageMult);
+            cloud.onDeath = () => { game.score += Math.round(75 * (game._scoreMultiplier || 1)); };
             game.addEntity(cloud);
         }
 
@@ -120,8 +136,18 @@ export class PlayingState extends GameState {
         this.princessSpawned = false;
         if (level.boss) {
             const boss = new Boss(level.boss.x, level.boss.y);
+            // Schwierigkeitsgrad auf Boss anwenden
+            const bDiff = diff.boss;
+            boss.health = Math.round(400 * bDiff.healthMult);
+            boss.maxHealth = Math.round(400 * bDiff.healthMult);
+            boss.damage = Math.round(boss.damage * bDiff.damageMult);
+            boss.phase2Threshold = bDiff.phase2Threshold;
+            boss.phase3Threshold = bDiff.phase3Threshold;
+            boss.summonInterval = Math.round(boss.summonInterval * bDiff.summonIntervalMult);
+            boss._damageMult = bDiff.damageMult;
+            boss._minionHealthMult = bDiff.minionHealthMult;
             boss.onDeath = () => {
-                game.score += 1000;
+                game.score += Math.round(1000 * (game._scoreMultiplier || 1));
                 if (game.particles) {
                     game.particles.emit(boss.x + boss.width / 2, boss.y + boss.height / 2, 40, {
                         color: '#ff4', speed: 200, life: 1, size: 6

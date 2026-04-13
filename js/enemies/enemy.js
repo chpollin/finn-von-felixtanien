@@ -149,7 +149,7 @@ export class Enemy extends Entity {
                 if (player && this.attackCooldown <= 0) {
                     // Kontaktschaden
                     if (this.collidesWith(player)) {
-                        player.takeDamage(this.damage);
+                        player.takeDamage(this.damage, null, game);
                         if (player.vx !== undefined) {
                             const kdir = player.x > this.x ? 1 : -1;
                             player.vx = kdir * 200;

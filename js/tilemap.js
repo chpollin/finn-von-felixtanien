@@ -8,7 +8,7 @@ export const TILE = {
     GRASS_TOP: 5,  // Gras-Oberfläche (solid)
 };
 
-const SOLID_TILES = new Set([TILE.GROUND, TILE.STONE, TILE.PLATFORM, TILE.GRASS_TOP]);
+const SOLID_TILES = new Set([TILE.GROUND, TILE.STONE, TILE.PLATFORM, TILE.GRASS_TOP, TILE.SPIKE]);
 
 export class TileMap {
     constructor(grid, tileSize = 32) {
