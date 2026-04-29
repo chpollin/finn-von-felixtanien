@@ -158,9 +158,84 @@ export class Game {
             this.renderSkyBg(ctx, width, height, camera);
         } else if (theme === 'lava') {
             this.renderLavaBg(ctx, width, height, camera);
+        } else if (theme === 'storm') {
+            this.renderStormBg(ctx, width, height, camera);
         } else {
             this.renderDefaultBg(ctx, width, height, camera);
         }
+    }
+
+    renderStormBg(ctx, w, h, cam) {
+        // Dunkle Gewitterwolken im Hintergrund
+        const off1 = cam.x * 0.06;
+        ctx.fillStyle = '#1a1a2a';
+        ctx.globalAlpha = 0.7;
+        for (let i = 0; i < 7; i++) {
+            const cx = i * 200 - (off1 % 200) - 80;
+            const cy = 80 + Math.sin(i * 1.7) * 50;
+            ctx.beginPath();
+            ctx.arc(cx, cy, 50, 0, Math.PI * 2);
+            ctx.arc(cx + 40, cy - 10, 38, 0, Math.PI * 2);
+            ctx.arc(cx + 70, cy + 5, 45, 0, Math.PI * 2);
+            ctx.arc(cx + 30, cy + 15, 30, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+
+        // Mittlere Wolkenschicht (heller, näher)
+        const off2 = cam.x * 0.15;
+        ctx.fillStyle = '#3a3a4a';
+        ctx.globalAlpha = 0.5;
+        for (let i = 0; i < 6; i++) {
+            const cx = i * 250 - (off2 % 250) - 100;
+            const cy = 200 + Math.sin(i * 2.3) * 60;
+            ctx.beginPath();
+            ctx.arc(cx, cy, 45, 0, Math.PI * 2);
+            ctx.arc(cx + 35, cy - 8, 32, 0, Math.PI * 2);
+            ctx.arc(cx + 60, cy + 10, 38, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+
+        // Blitze im Hintergrund (gelegentlich)
+        const flashSeed = Math.floor(Date.now() / 1500);
+        if ((flashSeed * 7919) % 5 < 1.5) {
+            const flashX = ((flashSeed * 13417) % w);
+            const flashAlpha = Math.max(0, 0.4 - ((Date.now() % 1500) / 1500) * 0.4);
+            ctx.globalAlpha = flashAlpha;
+            ctx.strokeStyle = '#ffff88';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(flashX, 0);
+            let cy = 0;
+            let cxLine = flashX;
+            for (let i = 0; i < 6; i++) {
+                cy += 30 + Math.random() * 20;
+                cxLine += (Math.random() - 0.5) * 30;
+                ctx.lineTo(cxLine, cy);
+            }
+            ctx.stroke();
+            // Heller Flash-Overlay
+            ctx.fillStyle = '#aaaadd';
+            ctx.globalAlpha = flashAlpha * 0.15;
+            ctx.fillRect(0, 0, w, h);
+            ctx.globalAlpha = 1;
+        }
+
+        // Regen
+        const rainOff = cam.x * 0.5;
+        ctx.strokeStyle = '#88aacc';
+        ctx.globalAlpha = 0.5;
+        ctx.lineWidth = 1;
+        for (let i = 0; i < 60; i++) {
+            const rx = (i * 73 + (Date.now() / 5)) % w;
+            const ry = (i * 47 + (Date.now() / 3)) % h;
+            ctx.beginPath();
+            ctx.moveTo(rx, ry);
+            ctx.lineTo(rx - 3, ry + 12);
+            ctx.stroke();
+        }
+        ctx.globalAlpha = 1;
     }
 
     renderDefaultBg(ctx, w, h, cam) {

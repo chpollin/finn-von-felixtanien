@@ -107,6 +107,9 @@ export class TornadoMount extends Entity {
             this.x += mx * this.flySpeed * dt;
             this.y += my * this.flySpeed * dt;
 
+            // Spieler-Blickrichtung an Bewegung anpassen
+            if (mx !== 0 && game.player) game.player.facingRight = mx > 0;
+
             // Level-Grenzen
             if (game.tilemap) {
                 this.x = Math.max(0, Math.min(game.tilemap.widthPx - this.width, this.x));

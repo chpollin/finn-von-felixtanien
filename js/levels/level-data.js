@@ -254,47 +254,44 @@ const level6 = {
     signs: [],
     door: null,
     boss: { x: 1200, y: 480 },
-    fakePrincess: true, // Plottwist!
+    dragonCutscene: true, // Nach Boss-Defeat: Drachen-Zwischensequenz
 };
 
-// === Level 7: Der Kerker (Bonus-Level nach Plottwist) ===
-const level7 = {
-    name: 'Der Kerker — Bonus Level!',
-    playerStart: { x: 48, y: 396 },
-    theme: 'dark',
-    tiles: [
-        [2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2], // 0 Decke
-        [2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2], // 1
-        [2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2], // 2
-        [2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2], // 3
-        [2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2], // 4
-        [2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2], // 5
-        [2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2], // 6
-        [2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2], // 7
-        [2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2], // 8
-        [2,0,0,0,0,0,0,0,0,0,3,3,3,0,0,0,0,0,0,0,0,0,0,3,3,3,0,0,0,0,0,0,0,0,0,0,0,0,0,2], // 9
-        [2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,3,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2], // 10
-        [2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,3,3,0,0,0,0,0,0,0,0,2], // 11
-        [2,0,0,0,0,0,0,0,0,0,0,0,0,3,3,0,0,0,0,0,0,0,0,0,0,3,3,0,0,0,0,0,0,0,0,2,0,0,0,2], // 12 Trittbretter
-        [2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,0,2], // 13
-        [2,2,2,2,2,2,2,2,2,2,2,2,2,0,0,2,2,2,2,2,2,0,0,2,2,2,2,2,0,0,2,2,2,2,2,2,2,2,2,2], // 14 Boden (2er Lücken)
-        [2,2,2,2,2,2,2,2,2,2,2,2,2,0,0,2,2,2,2,2,2,0,0,2,2,2,2,2,0,0,2,2,2,2,2,2,2,2,2,2], // 15
-    ],
-    enemies: [
-        { type: 'orc-dark', x: 250, y: 400, patrolRange: 50 },
-        { type: 'orc-fire', x: 500, y: 400, patrolRange: 40 },
-        { type: 'orc-dark', x: 750, y: 400, patrolRange: 50 },
-        { type: 'orc-light', x: 950, y: 400, patrolRange: 40 },
-    ],
-    items: [
-        { type: 'health-potion', x: 300, y: 410 },
-        { type: 'health-potion', x: 700, y: 410 },
-    ],
-    signs: [
-        { x: 80, y: 412, text: 'Lea muss hier\nirgendwo sein!' },
-    ],
-    realPrincess: true,
-    door: null,
-};
+// === Level 7: Der Sturmkampf (finaler Flugkampf gegen den Drachen) ===
+// Großes offenes Areal mit dunklem Sturm-Himmel — Spieler reitet Tornado, Drache fliegt
+const level7 = (() => {
+    // Tilemap: 60 Spalten x 25 Reihen, fast komplett leer, mit Wolken-Plattformen
+    const cols = 60;
+    const rows = 25;
+    const grid = [];
+    for (let r = 0; r < rows; r++) {
+        const row = [];
+        for (let c = 0; c < cols; c++) row.push(0);
+        grid.push(row);
+    }
+    // Untere Wolken-"Boden"-Linie als Plattform-Tiles (Spieler sieht Boden, kann aber nicht runterfallen)
+    for (let c = 0; c < cols; c++) {
+        grid[rows - 1][c] = 3; // Plattform
+    }
+    return {
+        name: 'Der Sturmkampf',
+        playerStart: { x: 100, y: 400 },
+        theme: 'storm',
+        tiles: grid,
+        enemies: [],
+        items: [
+            { type: 'health-potion', x: 1400, y: 380 },
+            { type: 'health-potion', x: 600, y: 200 },
+        ],
+        signs: [],
+        clouds: [],
+        // Tornado startet direkt beim Spieler — Auto-Mount
+        mount: { x: 100, y: 400 },
+        autoMount: true,
+        // Drache statt regulärem Boss
+        dragon: { x: 1200, y: 200 },
+        door: null,
+    };
+})();
 
 export const LEVELS = [level1, level2, level3, level4, level5, level6, level7];

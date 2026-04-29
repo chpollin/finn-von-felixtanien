@@ -69,6 +69,20 @@ export class Player extends Entity {
     update(dt, game) {
         const input = game.input;
 
+        // --- Cutscene-Freeze: Spieler kann sich nicht bewegen ---
+        if (this._cutsceneFreeze) {
+            this.vx = 0;
+            this.state = 'idle';
+            applyGravity(this, dt);
+            this.x += this.vx * dt;
+            this.y += this.vy * dt;
+            if (game.tilemap) {
+                this.grounded = false;
+                game.tilemap.resolveCollision(this);
+            }
+            return;
+        }
+
         // --- Element-Wechsel (Tasten 1-6) ---
         const elemOrder = ['fire', 'water', 'earth', 'air', 'dark', 'light'];
         for (let i = 0; i < 6; i++) {

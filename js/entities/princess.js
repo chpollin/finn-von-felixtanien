@@ -12,6 +12,12 @@ export class Princess extends Entity {
     update(dt, game) {
         this.timer += dt;
 
+        // Folge dem Spieler (für Drachen-Sieg-Szene) — nahe genug für Kollision
+        if (this._followPlayer && game.player) {
+            this.x = game.player.x + 4;
+            this.y = game.player.y - 4;
+        }
+
         // Victory-Timer (sicher, ohne setTimeout)
         if (this._victoryTimer > 0) {
             this._victoryTimer -= dt;
@@ -20,7 +26,7 @@ export class Princess extends Entity {
             }
         }
 
-        if (game.player && this.collidesWith(game.player) && !this.rescued) {
+        if (game.player && this.collidesWith(game.player) && !this.rescued && !this._heldByDragon && !this._inCutscene) {
             this.rescued = true;
             game.score += 500;
             if (game.particles) {
